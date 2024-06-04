@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,10 @@ import { useToast } from "@/components/ui/use-toast";
 import { LoginBody, LoginBodyType } from "@/schemaValidations/auth.schema";
 import authApiRequest from "@/apiRequest/auth";
 import { useRouter } from "next/navigation";
+import { handleErrorApi } from "@/lib/utils";
 
 export default function LoginForm() {
+  const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
   const router = useRouter();
   const form = useForm<LoginBodyType>({
@@ -30,6 +33,7 @@ export default function LoginForm() {
 
   async function onSubmit(values: LoginBodyType) {
     try {
+      setLoading(true);
       const result = await authApiRequest.login(values);
 
       toast({
@@ -37,32 +41,14 @@ export default function LoginForm() {
       });
 
       await authApiRequest.auth({
-        sessionToken: result.payload.data.token,
+        sessionToken: result?.payload?.data.token,
       });
 
       router.push("/profile");
     } catch (error: any) {
-      const errors = error.payload.errors as {
-        field: string;
-        message: string;
-      }[];
-
-      const status = error.status as number;
-
-      if (status === 422) {
-        errors.forEach((error) => {
-          form.setError(error.field as "email" | "password", {
-            type: "server",
-            message: error.message,
-          });
-        });
-      } else {
-        toast({
-          title: "Lỗi",
-          description: "Friday, February 10, 2023 at 5:57 PM",
-          variant: "destructive",
-        });
-      }
+      handleErrorApi({ error: error, setError: form.setError, duration: 200 });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -105,7 +91,7 @@ export default function LoginForm() {
         />
 
         <div className="flex justify-center">
-          <Button type="submit" className="!mt-10 w-32">
+          <Button type="submit" className="!mt-10 w-32" disabled={loading}>
             Đăng nhập
           </Button>
         </div>

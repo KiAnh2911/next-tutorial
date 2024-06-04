@@ -16,11 +16,16 @@ import {
   RegisterBody,
   RegisterBodyType,
 } from "@/schemaValidations/auth.schema";
-import envConfig from "@/config";
 import { useToast } from "@/components/ui/use-toast";
+import authApiRequest from "@/apiRequest/auth";
+import { useRouter } from "next/navigation";
+import { handleErrorApi } from "@/lib/utils";
+import { useState } from "react";
 
 export default function RegisterForm() {
+  const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
+  const router = useRouter();
   const form = useForm<RegisterBodyType>({
     resolver: zodResolver(RegisterBody),
     defaultValues: {
@@ -33,32 +38,18 @@ export default function RegisterForm() {
 
   async function onSubmit(values: RegisterBodyType) {
     try {
-      const result = await fetch(
-        `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/register`,
-        {
-          body: JSON.stringify(values),
-          headers: {
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-        }
-      ).then(async (res) => {
-        const payload = await res.json();
+      setLoading(true);
+      const result = await authApiRequest.register(values);
 
-        const data = {
-          status: res.status,
-          payload,
-        };
-        if (!res.ok) {
-          throw data;
-        }
-        return data;
-      });
       toast({
-        description: result.payload.message,
+        description: result?.payload.message,
       });
+
+      router.push("/profile");
     } catch (error: any) {
-      console.log("🚀 ~ onSubmit ~ error:", error);
+      handleErrorApi({ error: error, setError: form.setError, duration: 200 });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -126,7 +117,7 @@ export default function RegisterForm() {
           )}
         />
         <div className="flex justify-center">
-          <Button type="submit" className="!mt-10 w-32">
+          <Button type="submit" className="!mt-10 w-32" disabled={loading}>
             Đăng kí
           </Button>
         </div>
