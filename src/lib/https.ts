@@ -1,11 +1,14 @@
 import envConfig from "@/config";
 import { LoginResType } from "@/schemaValidations/auth.schema";
+import { normalizePath } from "./utils";
+import { redirect } from "next/navigation";
 
 type CustomOptions = RequestInit & {
   baseUrl?: string;
 };
 
 const ENTITY_ERROR_STATUS = 422;
+const AUTHENTICATION_ERROR_STATUS = 401;
 
 type EntityErrorPaylod = {
   message: string;
@@ -112,13 +115,43 @@ const request = async <Response>(
           payload: EntityErrorPaylod;
         }
       );
+    } else if (res.status === AUTHENTICATION_ERROR_STATUS) {
+      if (typeof window === "undefined") {
+        // xử lí hết hạn token ở next client
+
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          body: JSON.stringify({ force: true }),
+          headers: {
+            ...baseHeaders,
+          },
+        });
+        clientSessionToken.value = "";
+        location.href = "/login";
+      } else {
+        // hết hạn token ở next server
+
+        const sessionToken = (options?.headers as any)?.Authorization.split(
+          "Bearer "
+        )[1];
+
+        redirect(`/logout?sessionToken=${sessionToken}`);
+      }
     } else {
       throw new HttpError(data);
     }
   }
-  if (["/auth/login", "/auth/register"].includes(url)) {
-    clientSessionToken.value = (payload as LoginResType)?.data.token;
-  } else if ("/auth/logout".includes(url)) {
+
+  if (typeof window !== "undefined") {
+    if (
+      ["/auth/login", "/auth/register"].some(
+        (item) => item === normalizePath(url)
+      )
+    ) {
+      clientSessionToken.value = (payload as LoginResType)?.data.token;
+    } else if ("/auth/logout" === normalizePath(url)) {
+      clientSessionToken.value = "";
+    }
   }
 
   return data;

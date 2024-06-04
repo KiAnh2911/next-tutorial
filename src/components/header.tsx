@@ -1,6 +1,8 @@
 "use client";
+
 import { ModeToggle } from "@/components/mode-toggle";
 import Link from "next/link";
+import ButttonLogout from "./buttton-logout";
 
 export default function Header() {
   return (
@@ -15,12 +17,18 @@ export default function Header() {
         <li>
           <Link href="/register">Đăng ký</Link>
         </li>
+        <li>
+          <ButttonLogout />
+        </li>
         {/* {user ? (
           <>
             <li>
               <Link href={"/me"}>
                 Xin chào <strong>{user.name}</strong>
               </Link>
+            </li>
+            <li>
+              <ButttonLogout />
             </li>
           </>
         ) : (
