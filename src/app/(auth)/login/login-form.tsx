@@ -14,10 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { LoginBody, LoginBodyType } from "@/schemaValidations/auth.schema";
-import envConfig from "@/config";
+import authApiRequest from "@/apiRequest/auth";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
   const { toast } = useToast();
+  const router = useRouter();
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
     defaultValues: {
@@ -28,33 +30,18 @@ export default function LoginForm() {
 
   async function onSubmit(values: LoginBodyType) {
     try {
-      const result = await fetch(
-        `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/login`,
-        {
-          body: JSON.stringify(values),
-          headers: {
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-        }
-      ).then(async (res) => {
-        const payload = await res.json();
+      const result = await authApiRequest.login(values);
 
-        const data = {
-          status: res.status,
-          payload,
-        };
-        if (!res.ok) {
-          throw data;
-        }
-        return data;
-      });
       toast({
         description: result?.payload?.message,
       });
-      console.log("🚀 ~ onSubmit ~ result:", result);
+
+      await authApiRequest.auth({
+        sessionToken: result.payload.data.token,
+      });
+
+      router.push("/profile");
     } catch (error: any) {
-      console.log("🚀 ~ onSubmit ~ error:", error);
       const errors = error.payload.errors as {
         field: string;
         message: string;
