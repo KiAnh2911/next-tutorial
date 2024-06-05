@@ -41,6 +41,11 @@ export default function RegisterForm() {
       setLoading(true);
       const result = await authApiRequest.register(values);
 
+      await authApiRequest.auth({
+        sessionToken: result?.payload?.data.token,
+        expiresAt: result?.payload?.data.expiresAt,
+      });
+
       toast({
         description: result?.payload.message,
       });

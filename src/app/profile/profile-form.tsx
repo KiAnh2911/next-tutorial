@@ -14,38 +14,38 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { LoginBody, LoginBodyType } from "@/schemaValidations/auth.schema";
-import authApiRequest from "@/apiRequest/auth";
-import { useRouter } from "next/navigation";
+import {
+  AccountResType,
+  UpdateMeBody,
+  UpdateMeBodyType,
+} from "@/schemaValidations/account.schema";
+import accountApiRequest from "@/apiRequest/account";
 import { handleErrorApi } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
-export default function LoginForm() {
+type TProfile = AccountResType["data"];
+
+export default function ProfileForm({ profile }: { profile: TProfile }) {
   const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
   const router = useRouter();
-  const form = useForm<LoginBodyType>({
-    resolver: zodResolver(LoginBody),
+  const form = useForm<UpdateMeBodyType>({
+    resolver: zodResolver(UpdateMeBody),
     defaultValues: {
-      email: "",
-      password: "",
+      name: profile.name,
     },
   });
 
-  async function onSubmit(values: LoginBodyType) {
+  async function onSubmit(values: UpdateMeBodyType) {
     try {
       setLoading(true);
-      const result = await authApiRequest.login(values);
-
-      await authApiRequest.auth({
-        sessionToken: result?.payload?.data.token,
-        expiresAt: result?.payload?.data.expiresAt,
-      });
+      const result = await accountApiRequest.updateProfile(values);
 
       toast({
         description: result?.payload?.message,
       });
 
-      router.push("/profile");
+      router.refresh();
     } catch (error: any) {
       handleErrorApi({ error: error, setError: form.setError, duration: 200 });
     } finally {
@@ -60,31 +60,26 @@ export default function LoginForm() {
         className="space-y-2 max-w-[420px] flex-shrink-0 w-full"
         noValidate
       >
+        <FormLabel>Email</FormLabel>
+        <FormControl>
+          <Input
+            type="email"
+            placeholder="hoangki@gmail.com"
+            value={profile.email}
+            readOnly
+            disabled
+          />
+        </FormControl>
+        <FormMessage />
+
         <FormField
           control={form.control}
-          name="email"
+          name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Tên</FormLabel>
               <FormControl>
-                <Input
-                  type="email"
-                  placeholder="hoangki@gmail.com"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Mật khẩu</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="********" {...field} />
+                <Input type="text" placeholder="" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -93,7 +88,7 @@ export default function LoginForm() {
 
         <div className="flex justify-center">
           <Button type="submit" className="!mt-10 w-32" disabled={loading}>
-            Đăng nhập
+            Cập nhật Profile
           </Button>
         </div>
       </form>
