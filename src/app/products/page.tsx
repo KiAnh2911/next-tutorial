@@ -1,5 +1,5 @@
 import productsApiRequest from "@/apiRequest/products";
-import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -8,14 +8,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Image from "next/image";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import Link from "next/link";
 
 export default async function ProductListPage() {
   const { payload } = await productsApiRequest.getList();
   const productList = payload?.data;
-  console.log("🚀 ~ ProductListPage ~ productList:", productList);
   return (
     <div className="p-10">
       <div className="flex items-center justify-between mb-5">
