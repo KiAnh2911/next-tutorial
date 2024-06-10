@@ -1,4 +1,5 @@
 import https from "@/lib/https";
+import { MessageResType } from "@/schemaValidations/common.schema";
 import {
   CreateProductBodyType,
   ProductListResType,
@@ -7,13 +8,21 @@ import {
 } from "@/schemaValidations/product.schema";
 
 const productsApiRequest = {
-  getList: () => https.get<ProductListResType>("/products"),
+  getList: () =>
+    https.get<ProductListResType>("/products", { cache: "no-store" }),
+
+  getDetail: (id: number) =>
+    https.get<ProductResType>(`/products/${id}`, {
+      cache: "no-store",
+    }),
 
   create: (body: CreateProductBodyType) =>
     https.post<ProductResType>("/products", body),
 
-  update: (body: CreateProductBodyType) =>
-    https.put<UpdateProductBodyType>("/products", body),
+  update: (id: number, body: UpdateProductBodyType) =>
+    https.put<ProductResType>(`/products/${id}`, body),
+
+  delete: (id: number) => https.delete<MessageResType>(`products/${id}`),
 
   uploadImage: (body: FormData) =>
     https.post<{

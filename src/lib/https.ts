@@ -1,7 +1,7 @@
 import envConfig from "@/config";
 import { LoginResType } from "@/schemaValidations/auth.schema";
-import { normalizePath } from "./utils";
 import { redirect } from "next/navigation";
+import { normalizePath } from "./utils";
 
 type CustomOptions = RequestInit & {
   baseUrl?: string;
@@ -206,10 +206,9 @@ const https = {
   },
   delete<Response>(
     url: string,
-    body: any,
     options?: Omit<CustomOptions, "body"> | undefined
   ) {
-    return request<Response>("DELETE", url, { ...options, body });
+    return request<Response>("DELETE", url, { ...options });
   },
 };
 

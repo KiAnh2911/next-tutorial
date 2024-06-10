@@ -11,6 +11,7 @@ import {
 import { format } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
+import ButtonDeleteProduct from "./_components/button-delete-product";
 
 export default async function ProductListPage() {
   const { payload } = await productsApiRequest.getList();
@@ -19,7 +20,9 @@ export default async function ProductListPage() {
     <div className="p-10">
       <div className="flex items-center justify-between mb-5">
         <h1>List Products</h1>
-        <Link href={"/products/add"}>Add Product</Link>
+        <Link href={"/products/add"}>
+          <Button variant={"secondary"}>Add Product</Button>
+        </Link>
       </div>
 
       <Table>
@@ -63,8 +66,10 @@ export default async function ProductListPage() {
               </TableCell>
               <TableCell className="w-[100px]">
                 <div className="flex items-center gap-5">
-                  <Button>Edit</Button>
-                  <Button variant={"destructive"}>Delete</Button>
+                  <Link href={`/products/${product.id}`}>
+                    <Button>Edit</Button>
+                  </Link>
+                  <ButtonDeleteProduct product={product} />
                 </div>
               </TableCell>
             </TableRow>

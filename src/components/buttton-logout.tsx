@@ -1,7 +1,9 @@
-import { Button } from "./ui/button";
-import { handleErrorApi } from "@/lib/utils";
+"use client";
+
 import authApiRequest from "@/apiRequest/auth";
+import { handleErrorApi } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
+import { Button } from "./ui/button";
 
 export default function ButttonLogout() {
   const router = useRouter();
@@ -17,6 +19,8 @@ export default function ButttonLogout() {
         .then((res) => {
           router.push(`/login?redirectFrom=${pathname}`);
         });
+    } finally {
+      router.refresh();
     }
   };
 

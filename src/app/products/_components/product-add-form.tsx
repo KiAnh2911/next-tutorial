@@ -1,8 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import productsApiRequest from "@/apiRequest/products";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,19 +10,25 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
 import { handleErrorApi } from "@/lib/utils";
 import {
   CreateProductBody,
   CreateProductBodyType,
+  ProductResType,
+  UpdateProductBodyType,
 } from "@/schemaValidations/product.schema";
-import productsApiRequest from "@/apiRequest/products";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 
-export default function ProductAddForm() {
+type Product = ProductResType["data"];
+
+export default function ProductAddForm({ product }: { product?: Product }) {
   const [loading, setLoading] = useState<boolean>(false);
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -33,14 +37,16 @@ export default function ProductAddForm() {
   const form = useForm<CreateProductBodyType>({
     resolver: zodResolver(CreateProductBody),
     defaultValues: {
-      name: "",
-      price: 0,
-      description: "",
-      image: "",
+      name: product?.name ?? "",
+      price: Number(product?.price ?? 0),
+      description: product?.description ?? "",
+      image: product?.image ?? "",
     },
   });
 
-  async function onSubmit(values: CreateProductBodyType) {
+  const image = form.watch("image");
+
+  const createProduct = async (values: CreateProductBodyType) => {
     setLoading(true);
     try {
       const formData = new FormData();
@@ -57,10 +63,55 @@ export default function ProductAddForm() {
       });
 
       router.push("/products");
+      router.refresh();
     } catch (error: any) {
       handleErrorApi({ error: error, setError: form.setError, duration: 200 });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateProduct = async (_values: UpdateProductBodyType) => {
+    setLoading(true);
+    let values = _values;
+    try {
+      if (!product) return;
+
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file as Blob);
+        const uploadImageResult = await productsApiRequest.uploadImage(
+          formData
+        );
+        const imageUrl = uploadImageResult.payload.data;
+        values = {
+          ...values,
+          image: imageUrl,
+        };
+      }
+
+      const result = await productsApiRequest.update(product?.id, values);
+
+      toast({
+        description: result?.payload?.message,
+      });
+
+      router.push("/products");
+      router.refresh();
+    } catch (error: any) {
+      handleErrorApi({ error: error, setError: form.setError, duration: 200 });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  async function onSubmit(values: CreateProductBodyType) {
+    if (loading) return;
+
+    if (product) {
+      await updateProduct(values);
+    } else {
+      await createProduct(values);
     }
   }
 
@@ -143,10 +194,10 @@ export default function ProductAddForm() {
             </FormItem>
           )}
         />
-        {file && (
+        {(file || image) && (
           <div>
             <Image
-              src={URL.createObjectURL(file)}
+              src={file ? URL.createObjectURL(file) : image}
               width={120}
               height={120}
               alt="Preview"
@@ -164,8 +215,8 @@ export default function ProductAddForm() {
         )}
 
         <div className="flex justify-center">
-          <Button type="submit" className="!mt-10 w-32" disabled={loading}>
-            Tạo sản phẩm
+          <Button type="submit" className="w-full p-2" disabled={loading}>
+            {product ? "Cập nhật sản phẩm" : "Tạo sản phẩm"}
           </Button>
         </div>
       </form>
